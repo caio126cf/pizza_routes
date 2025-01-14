@@ -1,0 +1,15 @@
+# Ambiente Virtual
+/venv/
+
+# Arquivos Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Banco de Dados Local
+db.sqlite3
+
+# Arquivos de Configuração Sensível
+.env
+secrets.py
