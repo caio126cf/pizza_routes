@@ -2,40 +2,36 @@ from django.shortcuts import render
 import pytesseract
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
-import googlemaps
+from PIL import Image
 import re
 
+# Caminho para o executável do Tesseract no seu sistema
 path_tesseract = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 pytesseract.tesseract_cmd = path_tesseract
 
-# Create your views here.
-
+# Função de view para processar a imagem e retornar endereços via string
 @api_view(['POST'])
 def process_image(request):
-    # Salva a imagem enviada
-    image = request.FILES['image']
+    # Verifica se a imagem foi enviada
+    if 'image' not in request.FILES:
+        return JsonResponse({'error': 'No image provided'}, status=400)
 
-    # Processa OCR diretamente no arquivo
-    text = pytesseract.image_to_string(image)
+    # Obtém o arquivo de imagem enviado
+    image_file = request.FILES['image']
 
-    # Extrai endereços usando regex
+    # Tenta abrir a imagem e realizar OCR
+    try:
+        image = Image.open(image_file)
+        text = pytesseract.image_to_string(image)
+    except Exception as e:
+        return JsonResponse({'error': f'Error processing image: {str(e)}'}, status=500)
+
+    # Extrai endereços usando expressão regular
     addresses = re.findall(r'\d{5}-\d{3}|\w+\s\d+', text)
 
-    # Ordena os endereços com Google Maps API
-    gmaps = googlemaps.Client(key='YOUR_GOOGLE_API_KEY')
-    origin = "YOUR_ORIGIN_LAT,LONG"
-    destinations = addresses
+    # Verifica se encontrou endereços
+    if not addresses:
+        return JsonResponse({'error': 'No addresses found in the image'}, status=400)
 
-    # Obtém a matriz de distâncias
-    distances = gmaps.distance_matrix(origins=origin, destinations=destinations)
-    sorted_addresses = sorted(
-        destinations,
-        key=lambda addr: distances['rows'][0]['elements'][destinations.index(addr)]['distance']['value']
-    )
-
-    # Gera o link do Waze
-    waze_url = "https://waze.com/ul?" + "&".join(
-        [f"ll={addr}&navigate=yes" for addr in sorted_addresses]
-    )
-
-    return JsonResponse({"waze_url": waze_url, "addresses": sorted_addresses})
+    # Retorna os endereços encontrados
+    return JsonResponse({"addresses": addresses})

@@ -1,1 +1,1 @@
-C:\Program Files\Tesseract-OCR\tesseract.exe
+Este projeto é uma aplicação Django que processa imagens enviadas, realiza OCR para extrair texto e retorna endereços extraídos das imagens, no formato de rota no Waze, ordenada da mais próxima para a mais distante.
