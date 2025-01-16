@@ -6,8 +6,7 @@ from PIL import Image
 import re
 
 # Caminho para o executável do Tesseract no seu sistema
-path_tesseract = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-pytesseract.tesseract_cmd = path_tesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Função de view para processar a imagem e retornar endereços via string
 @api_view(['POST'])
@@ -18,20 +17,21 @@ def process_image(request):
 
     # Obtém o arquivo de imagem enviado
     image_file = request.FILES['image']
+    image = Image.open(image_file)
+    extracted_text = pytesseract.image_to_string(image)
 
-    # Tenta abrir a imagem e realizar OCR
-    try:
-        image = Image.open(image_file)
-        text = pytesseract.image_to_string(image)
-    except Exception as e:
-        return JsonResponse({'error': f'Error processing image: {str(e)}'}, status=500)
+    # Substituir múltiplas quebras de linha por um espaço
+    cleaned_text = re.sub(r'\n+', ' ', extracted_text)  
 
-    # Extrai endereços usando expressão regular
-    addresses = re.findall(r'\d{5}-\d{3}|\w+\s\d+', text)
+    # Regex para capturar os dados entre '#' e 'SP'
+    delivery_info = re.findall(r'#\d{5}.*?SP', cleaned_text)
+
+    # Limpar os dados, removendo o padrão '#12345'
+    delivery_addresses = [re.sub(r"#\d{5}", "", info) for info in delivery_info]
 
     # Verifica se encontrou endereços
-    if not addresses:
+    if not delivery_addresses:
         return JsonResponse({'error': 'No addresses found in the image'}, status=400)
 
-    # Retorna os endereços encontrados
-    return JsonResponse({"addresses": addresses})
+    # Retorna os endereços encontrados em formato JSON
+    return JsonResponse({"addresses": delivery_addresses})

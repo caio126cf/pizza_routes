@@ -14,9 +14,11 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# auto_routes/urls.py
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include  # Inclua 'include' para roteamento modular
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('routes.urls')),  # Inclui as rotas do aplicativo 'routes'
 ]

@@ -12,4 +12,7 @@ db.sqlite3
 
 # Arquivos de Configuração Sensível
 .env
-secrets.py
+
+# Anotações
+auto_routes.txt
+1000325571.jpg
