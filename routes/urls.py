@@ -3,6 +3,6 @@ from django.urls import path
 from .views import *  # Importa a função view
 
 urlpatterns = [
-    path('process-image/', process_image, name='process_image'),
+    path('process_request/', process_request, name='process_request'),
     path('consultar-cep/', consultar_cep, name='consultar_cep')
 ]
