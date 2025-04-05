@@ -1,6 +1,6 @@
 import React from "react";
 import { Route } from "lucide-react";
-import "./Header.css"; // Importa o CSS
+import "./styles/Header.css"; // Importa o CSS
 
 const Header = () => {
   return (

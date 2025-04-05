@@ -1,0 +1,129 @@
+.delivery-container {
+  border: 1px solid #ccc;
+  border-radius: 1rem;
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+}
+
+.delivery-container h2 {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.delivery-input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.delivery-textarea {
+  flex: 1;
+  max-width: 90%;
+  min-width: 90%;
+  resize: none;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  min-height: 45px;
+  line-height: 1.4;
+  overflow: hidden;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.multiple-address-textarea {
+  width: 90%;       /* <- largura ajustada */
+  max-width: 90%;
+  min-width: 90%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border-radius: 1rem;
+  border: 1px solid #ccc;
+  resize: none;
+  overflow: hidden;
+  font-family: inherit;
+  background-color: #f9f9f9;
+  color: #333;
+  min-height: 100px;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.btn-icon {
+  height: 45px;
+  width: 45px;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.delivery-buttons-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.delivery-buttons-row button {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 1rem;
+}
+
+.addresses-list {
+  margin-bottom: 20px;
+}
+
+.address-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.added-address-textarea {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border-radius: 1rem;
+  border: 1px solid #ccc;
+  resize: none;
+  overflow: hidden;
+  font-family: inherit;
+  background-color: #f9f9f9;
+  color: #333;
+  min-height: 45px;
+  box-sizing: border-box;
+}
+
+.delete-icon {
+  cursor: pointer;
+  color: #d9534f;
+  margin-left: 10px;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.actions-row .btn {
+  flex: 1;
+}
+
+.multiple-address-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
