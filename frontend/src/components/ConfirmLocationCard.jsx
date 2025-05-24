@@ -1,32 +1,35 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MapPin, CheckCircle, XCircle, MailCheck, Pencil } from "lucide-react";
-import "./styles/ConfirmLocationCard.css";
+import './styles/SharedStyles.css';
 
 const ConfirmLocationCard = ({ address, onConfirm, onReject, onEdit, viaCep, setAddress }) => {
   const [cep, setCep] = useState("");
   const [isEditing, setIsEditing] = useState(false); // <--- novo estado
 
   const handleGetCep = async () => {
-    const cleanCep = cep.replace(/\D/g, ""); // remove tudo que não for número
-
-    if (cleanCep.length !== 8) {
+    const cleanCep = cep.replace(/\D/g, ""); // Remove tudo que não for número
+  
+    const cepRegex = /^[0-9]{8}$/;
+    if (!cepRegex.test(cleanCep)) {
       alert("Digite um CEP válido com 8 dígitos.");
       return;
     }
-
+  
     try {
+      // Consulta o endereço na API ViaCEP
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       const data = await response.json();
-
+  
       if (data.erro) {
-        alert("CEP não encontrado.");
+        alert("CEP não encontrado. Verifique e tente novamente.");
         return;
       }
-
+  
+      // Define o endereço retornado pela API
       const fullAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
       setAddress(fullAddress);
     } catch (error) {
-      alert("Erro ao buscar o CEP.");
+      console.error("Erro ao buscar o endereço:", error);
     }
   };
   const textareaRef = useRef(null);
@@ -43,7 +46,7 @@ const ConfirmLocationCard = ({ address, onConfirm, onReject, onEdit, viaCep, set
   };
 
   return (
-    <div className="confirm-card">
+    <div className="main-card">
       <h2>
         <MapPin size={24} className="icon-title" />
         Confirmar Endereço
@@ -60,7 +63,7 @@ const ConfirmLocationCard = ({ address, onConfirm, onReject, onEdit, viaCep, set
                   const raw = e.target.value.replace(/[^0-9-]/g, "");
                   setCep(raw);
                 }}
-                className="cep-input"
+                className="input"
                 maxLength={9} // 8 números + 1 hífen
               />
           <button className="btn btn-primary" onClick={handleGetCep}>
@@ -80,7 +83,7 @@ const ConfirmLocationCard = ({ address, onConfirm, onReject, onEdit, viaCep, set
                   e.target.style.height = "auto"; // reset
                   e.target.style.height = `${e.target.scrollHeight}px`; // ajustar
                 }}
-                className="address-textarea"
+                className="input"
                 rows={1}
                 autoFocus
               />
@@ -94,7 +97,7 @@ const ConfirmLocationCard = ({ address, onConfirm, onReject, onEdit, viaCep, set
                   e.target.style.height = "auto";
                   e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
-                className="address-textarea"
+                className="input"
                 rows={1}
                 autoFocus={isEditing}
               />

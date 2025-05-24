@@ -4,6 +4,7 @@ import pytesseract
 import re
 import requests
 import os
+import json
 from dotenv import load_dotenv
 from django.views.decorators.csrf import csrf_exempt
 
@@ -25,84 +26,99 @@ def count_api_call(api_name):
     api_call_counter[api_name] = api_call_counter.get(api_name, 0) + 1
     print(f"API '{api_name}' chamada {api_call_counter[api_name]} vezes.")
 
-def consultar_cep(request):
+def check_address(request):
     if request.method != "POST":
-        return api_response("consultar_cep", error="Método não permitido")
+        return api_response("check_address", error="Método não permitido")
     
     print("Consultando CEP...", flush=True)
     cep = request.POST.get('cep')
     
     if not cep or not cep.isdigit() or len(cep) != 8:
-        return api_response("consultar_cep", error="CEP inválido")
+        return api_response("check_address", error="CEP inválido")
     
     count_api_call("viacep")
     response = requests.get(f'https://viacep.com.br/ws/{cep}/json/')
     data = response.json()
     
     if not data:
-        return api_response("consultar_cep", error="VIA Cep API não retornou dados.")
+        return api_response("check_address", error="VIA Cep API não retornou dados.")
     
-    return api_response("consultar_cep", data=data)
+    return api_response("check_address", data=data)
 
-def extract_text_from_image(image_file):
-    print("Extraindo texto da imagem...", flush=True)
-    image = Image.open(image_file)
+@csrf_exempt
+def image_extract(request):
+    if request.method != "POST":
+        return api_response("image_extract", error="Método não permitido")
     
+    if 'image' not in request.FILES:
+        return api_response("delivery_route", error="Imagem não recebida via request.")
+
+    image = Image.open(request.FILES['image'])
+
     if image.format not in ["JPEG", "PNG", "BMP", "GIF", "TIFF"]:
-        return api_response("extract_text_from_image", error="Formato de imagem inválido.")
+        return api_response("image_extract", error="Formato de imagem inválido.")
     
     extracted_text = pytesseract.image_to_string(image)
     delivery_info = re.findall(r'#\d{5}.*?SP', re.sub(r'\n+', ' ', extracted_text))
     delivery_addresses = [re.sub(r"#\d{5}", "", info).strip() for info in delivery_info]
-    
+
     if not delivery_addresses:
-        return api_response("extract_text_from_image", error="Não foi possível extrair endereços da imagem.")
+        return api_response("image_extract", error="Não foi possível extrair endereços da imagem.")
     
-    return delivery_addresses
+    return api_response("image_extract", data=delivery_addresses)
 
 def nearest_neighbor(origin, addresses):
-    print("Calculando a rota otimizada...", flush=True)
+    print("[nearest_neighbor] Iniciando cálculo da rota otimizada...", flush=True)
+    print(f"[nearest_neighbor] Origem: {origin} | Endereços: {addresses}", flush=True)
+
     if not addresses or not isinstance(addresses, list):
+        print("[nearest_neighbor] Endereços inválidos ou não fornecidos.", flush=True)
         return api_response("nearest_neighbor", error="Endereços inválidos ou não fornecidos.")
-    
-    route, current_location, remaining_addresses = [origin], origin, addresses[:]
-    
+
+    route = [origin]
+    current_location = origin
+    remaining_addresses = addresses[:]
+
     while remaining_addresses:
-        distances = get_distances(current_location, remaining_addresses)
-        valid_distances = {addr: dist for addr, dist in distances.items() if dist is not None}
-        
-        if not valid_distances:
+        print(f"[nearest_neighbor] Calculando distâncias de {current_location} para {remaining_addresses}", flush=True)
+        count_api_call("google_distance_matrix")
+        response = requests.get(
+            "https://maps.googleapis.com/maps/api/distancematrix/json",
+            params={"origins": current_location, "destinations": "|".join(remaining_addresses), "key": GOOGLE_API_KEY}
+        )
+        if not response.ok:
+            print(">>>>>>>>> Erro ao consultar API do Google.", flush=True)
+            return api_response("nearest_neighbor", error="Erro ao consultar API do Google.")
+
+        data = response.json()
+        if "rows" not in data or not data["rows"] or "elements" not in data["rows"][0]:
             break
-        
-        next_address = min(valid_distances, key=valid_distances.get)
+
+        distances = {}
+        for i, element in enumerate(data["rows"][0]["elements"]):
+            if element.get("status") == "OK":
+                distances[remaining_addresses[i]] = element["distance"]["value"]
+            else:
+                distances[remaining_addresses[i]] = None
+
+        # Seleciona o próximo endereço mais próximo
+        min_distance = None
+        next_address = None
+        for addr in remaining_addresses:
+            dist = distances.get(addr)
+            if dist is not None and (min_distance is None or dist < min_distance):
+                min_distance = dist
+                next_address = addr
+
+        if next_address is None:
+            break
+
         route.append(next_address)
         current_location = next_address
         remaining_addresses.remove(next_address)
-    
-    return route
 
-def get_distances(origin, destinations):
-    print(f"Calculando distâncias a partir de {origin}...", flush=True)
-    
-    count_api_call("google_distance_matrix")
-    response = requests.get(
-        "https://maps.googleapis.com/maps/api/distancematrix/json",
-        params={"origins": origin, "destinations": "|".join(destinations), "key": GOOGLE_API_KEY}
-    )
-    
-    if not response.ok:
-        return {}
-    
-    data = response.json()
-    
-    if "rows" not in data or not data["rows"] or "elements" not in data["rows"][0]:
-        return {}
-    
-    distances = {}
-    for i, element in enumerate(data["rows"][0]["elements"]):
-        distances[destinations[i]] = element["distance"]["value"] if element.get("status") == "OK" else None
-    
-    return distances
+    print(f"[nearest_neighbor] Rota final otimizada: {route}", flush=True)
+    return route
 
 def generate_google_maps_url(route):
     print("Gerando URL para o Google Maps...", flush=True)
@@ -132,34 +148,23 @@ def get_coordinates_from_address(address):
     return None
 
 @csrf_exempt # type: ignore
-def process_request(request):
+def delivery_route(request):
     if request.method != "POST":
-        return api_response("process_request", error="Método não permitido")
+        return api_response("delivery_route", error="Método não permitido")
     
-    print("Processando a requisição...", flush=True)
+    user_location = request.POST.get('user_location')
+    delivery_addresses = request.POST.get('delivery_addresses')
     
-    if 'image' not in request.FILES:
-        return api_response("process_request", error="Imagem não recebida via request.")
-    
-    user_location = request.POST.get('current_location')
-    cep = request.POST.get('cep')
-    
-    if cep and not user_location:
-        user_location = get_coordinates_from_address(cep)
-        if not user_location:
-            return api_response("process_request", error="CEP inválido.")
-    
-    delivery_addresses = extract_text_from_image(request.FILES['image'])
-    if not delivery_addresses:
-        return api_response("process_request", error="Extração do texto da imagem falhou.")
+    delivery_addresses_list = json.loads(delivery_addresses)
 
-    optimized_route = nearest_neighbor(user_location, delivery_addresses)
-    google_maps_url = generate_google_maps_url(optimized_route)
-    return api_response("process_request", data={
-        "optimized_route": optimized_route,
-        "google_maps_url": google_maps_url
-    })
+    if delivery_addresses_list:
+        optimized_route = nearest_neighbor(user_location, delivery_addresses_list)
+        google_maps_url = generate_google_maps_url(optimized_route)
+        return api_response("delivery_route", data={
+            "optimized_route": optimized_route,
+            "google_maps_url": google_maps_url
+        })
+    else:
+        return api_response("delivery_route", error="Formato inválido para 'delivery_addresses'.")
+
     
-# BACKEND ESTA FUNCIONANDO PASSANDO O CEP NO FORMATO CEP
-# OU USER_LOCATION NO FORMATO QUE O NAVEGADOR CAPTURA (LATITUDE E LONGITUDE)
-# AGORA, FAZER A PARTE DO FRONTEND. DECIDIR COMO FARA A DIVISAO DE CAPTURA DE LOCALZIACAO OU CEP

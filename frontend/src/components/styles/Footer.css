@@ -1,12 +1,10 @@
-.footer {
-    background-color: #ff6b00; /* Mesma cor do header */
-    color: white;
-    text-align: center;
-    padding: 1px;
-    position: fixed;
-    bottom: 0;
+   .footer {
+    position: initial;
     width: 100%;
-    font-size: 14px;
-    box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.3); /* Sombra no topo do rodapé */
+    background-color: #ff6b00; /* Cor de fundo semelhante ao Header */
+    color: white; /* Texto branco para contraste */
+    display: flex;
+    justify-content: center;
+    padding: 1px;
+    box-shadow: 0px -4px 10px rgba(0, 0, 0, 0.2);
   }
-  

@@ -1,6 +1,7 @@
 import React from "react";
 import { Route } from "lucide-react";
 import "./styles/Header.css"; // Importa o CSS
+import './styles/SharedStyles.css';
 
 const Header = () => {
   return (
