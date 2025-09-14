@@ -21,4 +21,6 @@ from django.urls import path, include  # Inclua 'include' para roteamento modula
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('routes.urls')),  # Inclui as rotas do aplicativo 'routes'
+    path('accounts/', include('allauth.urls')),
 ]
+
