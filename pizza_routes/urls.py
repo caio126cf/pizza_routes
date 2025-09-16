@@ -17,10 +17,12 @@ Including another URLconf
 # auto_routes/urls.py
 from django.contrib import admin
 from django.urls import path, include  # Inclua 'include' para roteamento modular
+from routes.views import *  # Importa as views do aplicativo routes
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('routes.urls')),  # Inclui as rotas do aplicativo 'routes'
     path('accounts/', include('allauth.urls')),
+    path('auth/', include('allauth.headless.urls')),
 ]
 

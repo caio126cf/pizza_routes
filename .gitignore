@@ -14,6 +14,10 @@ db.sqlite3
 # Arquivos de Configuração Sensível
 .env
 
+authentication/migrations/
+authentication/__pycache__/
+routes/migrations/
+routes/__pycache__/
 # Anotações
 notas.txt
 1000325571.jpg

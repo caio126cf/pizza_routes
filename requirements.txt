@@ -8,3 +8,5 @@ python-dotenv==0.19.1
 django-cors-headers==4.0.0
 django-allauth==65.11.2
 psycopg2-binary==2.9.9
+dj-rest-auth==2.1.12
+PyJWT==2.8.0
